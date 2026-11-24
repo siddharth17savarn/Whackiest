@@ -1,0 +1,26 @@
+<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>ShopKart Support (Demo)</title>
+<style>:root{color-scheme:light dark;--bg:#eef1f6;--c:#fff;--t:#111827;--a:#e8eefc;--u:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--c:#151b2e;--t:#e5e7eb;--a:#222c48}}
+body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui;display:grid;place-items:center;min-height:100vh}
+.w{width:min(440px,94vw);background:var(--c);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px #0003}
+header{background:var(--u);color:#fff;padding:14px 16px;font-weight:700}header small{display:block;font-weight:400;opacity:.85}
+#log{height:380px;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:9px 12px;border-radius:12px;line-height:1.4}.agent{background:var(--a);align-self:flex-start}.user{background:var(--u);color:#fff;align-self:flex-end}
+form{display:flex;gap:8px;padding:10px;border-top:1px solid #8884}input{flex:1;padding:9px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit}
+button{background:var(--u);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
+.hint{font-size:12px;opacity:.7;padding:0 14px 10px}</style>
+<div class=w data-company="ShopKart"><header>ShopKart Support<small>Demo support chat · scripted agent</small></header>
+<div id=log></div><div class=hint>Type anything and press Send – the agent replies from a script (4 steps).</div>
+<form id=f><input id=i placeholder="My order arrived damaged…" autocomplete=off><button>Send</button></form></div>
+<script>
+const script=["Hi, I'm Priya from ShopKart Support. I'm sorry about the damaged item – let me look into it.",
+"Your refund will be processed within 5 business days, provided the return is scanned at the courier.",
+"We have escalated your complaint, and you will receive an update by tomorrow.",
+"Good news: your refund has been processed on our side. Anything else I can help with?"];
+let n=0;const log=document.getElementById('log');
+function add(t,r){const d=document.createElement('div');d.className='msg '+r;if(r==='agent')d.dataset.role='agent';d.textContent=t;log.appendChild(d);log.scrollTop=1e9;}
+add(script[n++],'agent');
+f.onsubmit=e=>{e.preventDefault();add(i.value||'(no text)','user');i.value='';
+ setTimeout(()=>add(script[n%script.length],'agent'),900);n++;};
+</script></html>

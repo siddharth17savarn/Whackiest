@@ -1,0 +1,5 @@
+1. chrome://extensions -> enable Developer mode -> Load unpacked -> select this folder.
+2. In this folder run:  python3 -m http.server 8000   then open http://localhost:8000/demo_shopkart_chat.html
+3. Send messages. Confirm the toasts (PROMISED, then CLAIMED).
+4. Click the extension icon -> ledger. Press "It didn't" for a CONTRADICTION; "Fast-forward +3 days" for OVERDUE.
+Note: manifest.json must keep that exact name (Chrome requirement); every other file is prefixed amx_/demo_ to avoid clashing with your prototype.

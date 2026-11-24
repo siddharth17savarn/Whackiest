@@ -1,0 +1,5 @@
+{"manifest_version":3,"name":"Aftermath Live","version":"0.1","description":"Every promise leaves a trace.",
+"permissions":["storage","alarms"],"host_permissions":["<all_urls>"],
+"background":{"service_worker":"amx_bg.js"},
+"action":{"default_title":"Open Promise Ledger"},
+"content_scripts":[{"matches":["<all_urls>"],"js":["amx_watch.js"],"run_at":"document_idle"}]}

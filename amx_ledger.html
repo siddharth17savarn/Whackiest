@@ -1,0 +1,18 @@
+<!doctype html><meta charset=utf-8><title>Aftermath Live – Promise Ledger</title>
+<style>:root{color-scheme:light dark;--bg:#f6f7fb;--c:#fff;--t:#111827;--m:#6b7280;--b:#e5e7eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--c:#151b2e;--t:#e5e7eb;--m:#9ca3af;--b:#27304a}}
+body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui}main{max-width:860px;margin:auto;padding:24px}
+h1{margin:0}h1 span{color:#f59e0b}.tag{color:var(--m);margin:4px 0 16px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.bar input{flex:1;min-width:180px}
+button,input{padding:7px 12px;border-radius:8px;border:1px solid var(--b);background:var(--c);color:var(--t);cursor:pointer}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:14px}
+.card.bad{border-color:#dc2626}.top{display:flex;justify-content:space-between;gap:8px}.co{font-weight:700}
+.m{color:var(--m);font-size:13px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.s{padding:8px;border-radius:8px;border:1px dashed var(--b);font-size:12px}.s.on{border-style:solid;background:#f59e0b22;border-color:#f59e0b}
+.s.vf.on{background:#16a34a22;border-color:#16a34a}.s b{display:block}
+.flag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;background:#dc2626;color:#fff;margin-right:6px}
+.flag.ok{background:#16a34a}.flag.w{background:#d97706}.act button{margin:6px 6px 0 0}</style>
+<main><h1>AFTERMATH <span>LIVE</span></h1><div class=tag>Every promise leaves a trace.</div>
+<div class=bar><button id=ff>⏩ Fast-forward +3 days</button><button id=rs>Reset clock</button><button id=ex>Export JSON</button><button id=cl>Clear all</button>
+<input id=key type=password placeholder="Optional Gemini API key (else local extractor)"><button id=sv>Save key</button></div>
+<div id=list></div><div class=m id=clk></div></main><script src=amx_ledger.js></script>
