@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ShopKart Support (demo v3)</title>
+<style>
+body{font:15px system-ui;background:#eef1f5;margin:0;display:flex;justify-content:center;padding:30px}
+#wrap{width:480px;background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.12);overflow:hidden}
+h1{margin:0;padding:14px 16px;background:#ff6f00;color:#fff;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+h1 small{font-weight:400;font-size:12px;opacity:.85}
+#chat{height:360px;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:9px 12px;border-radius:12px}
+.agent{background:#f1f3f4;align-self:flex-start}.user{background:#ff6f00;color:#fff;align-self:flex-end}
+.typing{color:#80868b;font-size:12px;padding:0 14px 6px;height:16px}
+.bar{display:flex;gap:6px;padding:10px;border-top:1px solid #eee}
+input{flex:1;padding:8px}button{padding:8px 12px;cursor:pointer}
+</style></head><body>
+<div id="wrap" data-company="ShopKart">
+<h1>ShopKart Customer Support <small id="step"></small></h1>
+<div id="chat"></div><div class="typing" id="typing"></div>
+<div class="bar"><input id="in" placeholder="Type as customer..."><button id="send">Send</button><button id="next">Next agent reply &raquo;</button><button id="reset">Reset</button></div>
+</div>
+<script>
+const script = [
+ "Hi, I'm Priya from ShopKart support. How can I help you today?",
+ "I'm sorry about the damaged item. Your refund will be processed within 5 business days, provided the item is returned.",
+ "Our technical team will resolve this issue by tomorrow.",
+ "We have escalated your complaint, and you will receive an update shortly.",
+ "Apologies for the delay. Your refund will now be processed within 10 business days.",   // revised promise -> deadline slip
+ "Good news, your refund has been processed."                                              // claim -> user observes "not received" -> contradiction
+];
+let i = 0, busy = false;
+const chat = document.getElementById("chat"), typing = document.getElementById("typing"), step = document.getElementById("step");
+const add = (cls, text) => { const d = document.createElement("div"); d.className = "msg " + cls; d.textContent = text; chat.append(d); chat.scrollTop = chat.scrollHeight; };
+const upd = () => step.textContent = `scripted reply ${Math.min(i, script.length)}/${script.length}`;
+function next() {
+  if (busy || i >= script.length) return; busy = true; typing.textContent = "Priya is typing\u2026";
+  setTimeout(() => { typing.textContent = ""; add("agent", script[i++]); busy = false; upd(); }, 900);
+}
+document.getElementById("next").onclick = next;
+document.getElementById("send").onclick = () => { const v = document.getElementById("in"); if (v.value.trim()) { add("user", v.value.trim()); v.value = ""; } };
+document.getElementById("in").onkeydown = e => { if (e.key === "Enter") document.getElementById("send").click(); };
+document.getElementById("reset").onclick = () => { chat.replaceChildren(); i = 0; add("user", "Hello, my order arrived damaged and I want a refund."); upd(); };
+add("user", "Hello, my order arrived damaged and I want a refund."); upd();
+</script>
+</body></html>
