@@ -23,20 +23,33 @@
 
   /**
    * Merge pending /inbox observation events into a fresh copy of `items`.
-   * Returns { items, appliedEventIds } without mutating the input array.
+   * Deduplicates repeated event_ids and prevents older events from overwriting
+   * newer observations. Returns { items, appliedEventIds } without mutating input.
    */
   function mergeObservationsIntoItems(items, events, nowMs) {
     const refNow = typeof nowMs === 'number' ? nowMs : Date.now();
     const cloned = (items || []).map((it) => ({ ...it }));
     const appliedEventIds = [];
+    const seenEventIds = new Set();
 
     for (const ev of events || []) {
+      if (ev.event_id) {
+        if (seenEventIds.has(ev.event_id)) continue;
+        seenEventIds.add(ev.event_id);
+      }
       const target = cloned.find((it) => String(it.id) === String(ev.promise_id));
       if (!target) continue;
+
+      const evAt = typeof ev.at === 'number' ? ev.at : refNow;
+      if (target.observed && typeof target.observed.at === 'number' && target.observed.at > evAt) {
+        if (ev.event_id) appliedEventIds.push(ev.event_id);
+        continue;
+      }
+
       target.observed = {
         ok: Boolean(ev.ok),
         note: String(ev.note || (ev.ok ? 'Outcome seen' : 'Outcome not seen')),
-        at: ev.at || refNow,
+        at: evAt,
       };
       target.state = resolveState(target, refNow);
       if (ev.event_id) appliedEventIds.push(ev.event_id);

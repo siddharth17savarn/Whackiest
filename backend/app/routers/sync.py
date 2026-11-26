@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from ..schemas import ExportLedgerItem
-from ..services.ledger_store import read_inbox, read_ledger, write_ledger
+from ..services.ledger_store import merge_and_write_ledger, read_ledger
 
 router = APIRouter(prefix="/sync", tags=["sync"])
 
@@ -35,14 +35,13 @@ async def get_synced_ledger() -> dict[str, Any]:
 
 @router.post("", response_model=SyncResponse)
 async def post_sync_ledger(payload: SyncRequest) -> SyncResponse:
-    """Persist extension ledger items to ~/.aftermath/ledger.json."""
+    """Persist extension ledger items to ~/.aftermath/ledger.json without clobbering pending inbox observations."""
     raw_items = [item.model_dump(mode="json") for item in payload.items]
-    saved = write_ledger(raw_items, skew=payload.skew)
-    pending = read_inbox()
+    saved, pending_count = merge_and_write_ledger(raw_items, skew=payload.skew)
     return SyncResponse(
         status="ok",
         synced_count=len(raw_items),
         updated_at=saved.get("updated_at"),
         skew=saved.get("skew", 0),
-        pending_inbox_count=len(pending),
+        pending_inbox_count=pending_count,
     )

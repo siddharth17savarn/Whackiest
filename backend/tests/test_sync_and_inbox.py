@@ -1,8 +1,9 @@
 """
-backend/tests/test_sync_and_inbox.py — Tests for /sync and /inbox routers and ~/.aftermath/ledger.json.
+backend/tests/test_sync_and_inbox.py — Tests for /sync, /inbox, and ~/.aftermath/ledger.json.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import sys
 from pathlib import Path
 
@@ -25,12 +26,10 @@ def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 def test_sync_get_and_post_persists_ledger_json(isolated_data_dir: Path):
     with TestClient(app) as tc:
-        # Initially empty
         r0 = tc.get("/sync")
         assert r0.status_code == 200
         assert r0.json()["items"] == []
 
-        # Push 1 item
         r1 = tc.post(
             "/sync",
             json={
@@ -52,7 +51,6 @@ def test_sync_get_and_post_persists_ledger_json(isolated_data_dir: Path):
         assert body["synced_count"] == 1
         assert body["skew"] == 259200000
 
-        # Verify file on disk and GET /sync
         assert (isolated_data_dir / "ledger.json").exists()
         r2 = tc.get("/sync")
         assert r2.status_code == 200
@@ -60,7 +58,53 @@ def test_sync_get_and_post_persists_ledger_json(isolated_data_dir: Path):
         assert r2.json()["items"][0]["id"] == 1001
 
 
-def test_inbox_observation_write_back_and_ack(isolated_data_dir: Path):
+def test_sync_preserves_unacknowledged_inbox_observation(isolated_data_dir: Path):
+    """POST /sync must not clobber an unacknowledged MCP/inbox observation."""
+    with TestClient(app) as tc:
+        tc.post(
+            "/sync",
+            json={
+                "items": [
+                    {
+                        "id": 3003,
+                        "company": "ShopKart",
+                        "promise": "Refund within 5 business days.",
+                        "claimed": {"text": "Processed.", "at": 1764477000000},
+                    }
+                ]
+            },
+        )
+        tc.post(
+            "/inbox",
+            json={
+                "promise_id": 3003,
+                "ok": False,
+                "note": "No refund received.",
+                "at_ms": 1764563400000,
+            },
+        )
+        # Extension pushes stale copy without the observation before pulling /inbox
+        r_sync = tc.post(
+            "/sync",
+            json={
+                "items": [
+                    {
+                        "id": 3003,
+                        "company": "ShopKart",
+                        "promise": "Refund within 5 business days.",
+                        "claimed": {"text": "Processed.", "at": 1764477000000},
+                    }
+                ]
+            },
+        )
+        assert r_sync.status_code == 200
+        assert r_sync.json()["pending_inbox_count"] == 1
+        synced = tc.get("/sync").json()
+        assert synced["items"][0]["state"] == "CONTRADICTION"
+        assert synced["items"][0]["observed"]["note"] == "No refund received."
+
+
+def test_inbox_observation_write_back_dedup_and_ack(isolated_data_dir: Path):
     with TestClient(app) as tc:
         tc.post(
             "/sync",
@@ -76,8 +120,7 @@ def test_inbox_observation_write_back_and_ack(isolated_data_dir: Path):
             },
         )
 
-        # Post observation via /inbox
-        r_obs = tc.post(
+        r_obs1 = tc.post(
             "/inbox",
             json={
                 "promise_id": 2002,
@@ -86,30 +129,63 @@ def test_inbox_observation_write_back_and_ack(isolated_data_dir: Path):
                 "at_ms": 1764563400000,
             },
         )
-        assert r_obs.status_code == 200
-        obs_body = r_obs.json()
-        assert obs_body["applied_to_ledger"] is True
-        event_id = obs_body["event_id"]
+        # Duplicate identical observation should deduplicate to the same event_id
+        r_obs2 = tc.post(
+            "/inbox",
+            json={
+                "promise_id": 2002,
+                "ok": False,
+                "note": "Checked My Bank: ₹0.00 credited.",
+                "at_ms": 1764563400000,
+            },
+        )
+        assert r_obs1.status_code == 200
+        assert r_obs2.status_code == 200
+        event_id = r_obs1.json()["event_id"]
+        assert r_obs2.json()["event_id"] == event_id
 
-        # Verify ledger.json updated to CONTRADICTION
-        synced = tc.get("/sync").json()
-        assert synced["items"][0]["state"] == "CONTRADICTION"
-        assert synced["items"][0]["observed"]["ok"] is False
-
-        # Verify GET /inbox returns the pending event
         inbox_before = tc.get("/inbox").json()
         assert inbox_before["count"] == 1
 
-        # Ack the event
         ack_resp = tc.post("/inbox/ack", json={"event_ids": [event_id]})
         assert ack_resp.status_code == 200
         assert ack_resp.json()["acknowledged"] == 1
-
-        # Inbox is now empty
         assert tc.get("/inbox").json()["count"] == 0
 
 
-def test_inbox_rejects_blank_note():
+def test_malformed_json_files_handled_safely(isolated_data_dir: Path):
+    (isolated_data_dir / "ledger.json").write_text("{broken json", encoding="utf-8")
+    (isolated_data_dir / "inbox.json").write_text("{broken json", encoding="utf-8")
     with TestClient(app) as tc:
-        resp = tc.post("/inbox", json={"promise_id": 1, "ok": False, "note": "   "})
-    assert resp.status_code == 422
+        assert tc.get("/sync").json()["items"] == []
+        assert tc.get("/inbox").json()["events"] == []
+
+
+def test_concurrent_inbox_writes_do_not_lose_events(isolated_data_dir: Path):
+    with TestClient(app) as tc:
+        tc.post(
+            "/sync",
+            json={
+                "items": [
+                    {"id": i, "company": "ShopKart", "promise": f"Promise {i}"}
+                    for i in range(1, 6)
+                ]
+            },
+        )
+
+        def _post(i: int):
+            return tc.post(
+                "/inbox",
+                json={"promise_id": i, "ok": False, "note": f"Observation {i}"},
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(_post, range(1, 6)))
+        assert all(r.status_code == 200 for r in results)
+        assert tc.get("/inbox").json()["count"] == 5
+
+
+def test_validation_rejects_invalid_sync_and_inbox():
+    with TestClient(app) as tc:
+        assert tc.post("/inbox", json={"promise_id": 1, "ok": False, "note": "   "}).status_code == 422
+        assert tc.post("/sync", json={"items": [{"id": 1, "company": "", "promise": ""}]}).status_code == 422

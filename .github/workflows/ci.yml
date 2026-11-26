@@ -27,7 +27,7 @@ jobs:
 
       - name: Install MCP server dependencies
         working-directory: mcp-server
-        run: npm ci || npm install
+        run: npm ci
 
       - name: Run Python backend & 30-phrase tests
         run: python -m pytest backend/tests tests/test_deadline_30_phrases.py -v

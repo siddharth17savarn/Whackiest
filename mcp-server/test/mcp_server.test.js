@@ -142,6 +142,13 @@ describe('AFTERMATH LIVE MCP Server (stdio transport)', () => {
         arguments: { promise_id: 999999999, ok: false, note: 'Missing' },
       });
       assert.strictEqual(errRes.isError, true);
+
+      // Blank note returns isError
+      const blankRes = await client.callTool({
+        name: 'add_observation',
+        arguments: { promise_id: 1764131400000, ok: false, note: '   ' },
+      });
+      assert.strictEqual(blankRes.isError, true);
     });
   });
 
@@ -209,6 +216,36 @@ describe('Extension bg/sync.js & shared/report_generator.js', () => {
     assert.deepStrictEqual(ackedIds, ['ev-1']);
     assert.strictEqual(storageState.items[0].state, 'CONTRADICTION');
     assert.strictEqual(pushedBody.items.length, 2);
+  });
+
+  it('bg/sync.js deduplicates duplicate event_ids and ignores older events', () => {
+    const items = [
+      {
+        id: 1,
+        company: 'ShopKart',
+        promise: 'Refund within 5 business days',
+        observed: { ok: true, note: 'Newer observation', at: 2000 },
+      },
+    ];
+    const events = [
+      { event_id: 'dup-1', promise_id: 1, ok: false, note: 'Older event', at: 1000 },
+      { event_id: 'dup-1', promise_id: 1, ok: false, note: 'Duplicate event', at: 3000 },
+    ];
+    const { items: out, appliedEventIds } = bgSync.mergeObservationsIntoItems(items, events, 3500);
+    // Older event did not overwrite newer observation, duplicate event_id skipped
+    assert.strictEqual(out[0].observed.note, 'Newer observation');
+    assert.deepStrictEqual(appliedEventIds, ['dup-1']);
+  });
+
+  it('bg/sync.js handles offline/network failures gracefully without corrupting storage', async () => {
+    const fakeStorage = {
+      async get() { return { items: [], skew: 0 }; },
+      async set() { throw new Error('Should not write on failed fetch'); },
+    };
+    const offlineFetch = async () => { throw new Error('ECONNREFUSED'); };
+    const res = await bgSync.syncCycle({ storage: fakeStorage, fetchFn: offlineFetch });
+    assert.strictEqual(res.ok, false);
+    assert(res.error.includes('ECONNREFUSED'));
   });
 
   it('report_generator produces chronological timeline without inventing missing data', () => {
