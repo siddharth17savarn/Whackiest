@@ -108,18 +108,26 @@ function addObservation({ promiseId, ok, note, atMs }) {
 
   writeLedger(ledger.items, ledger.skew || 0);
 
-  // Also queue write-back event in inbox.json so bg/sync.js pulls it into chrome.storage.local
+  // Also queue write-back event in inbox.json (deduplicating identical pending events)
   const events = readInbox();
-  const event = {
-    event_id: crypto.randomBytes(6).toString('hex'),
-    promise_id: target.id,
-    ok: Boolean(ok),
-    note: trimmedNote,
-    at: nowMs,
-    created_at: new Date().toISOString(),
-  };
-  events.push(event);
-  atomicWriteJson(getInboxPath(), events);
+  let event = events.find(
+    (e) =>
+      String(e.promise_id) === String(target.id) &&
+      Boolean(e.ok) === Boolean(ok) &&
+      String(e.note || '').trim() === trimmedNote
+  );
+  if (!event) {
+    event = {
+      event_id: crypto.randomBytes(6).toString('hex'),
+      promise_id: target.id,
+      ok: Boolean(ok),
+      note: trimmedNote,
+      at: nowMs,
+      created_at: new Date().toISOString(),
+    };
+    events.push(event);
+    atomicWriteJson(getInboxPath(), events);
+  }
 
   return { item: target, event };
 }

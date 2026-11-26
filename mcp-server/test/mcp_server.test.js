@@ -131,7 +131,20 @@ describe('AFTERMATH LIVE MCP Server (stdio transport)', () => {
       assert.strictEqual(body.updated_item.state, 'CONTRADICTION');
       assert.strictEqual(body.updated_item.observed.ok, false);
 
-      // Verify inbox.json has the write-back event
+      // Calling add_observation again with identical payload persists exactly once
+      const resDup = await client.callTool({
+        name: 'add_observation',
+        arguments: {
+          promise_id: 1764131400000,
+          ok: false,
+          note: 'Checked My Bank: ₹0.00 credited.',
+          at_ms: 1764500000000,
+        },
+      });
+      const dupBody = JSON.parse(resDup.content[0].text);
+      assert.strictEqual(dupBody.event_id, body.event_id);
+
+      // Verify inbox.json has the write-back event exactly once
       const inbox = ledgerClient.readInbox();
       assert.strictEqual(inbox.length, 1);
       assert.strictEqual(inbox[0].promise_id, 1764131400000);
