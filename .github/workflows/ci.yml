@@ -2,7 +2,7 @@ name: AFTERMATH LIVE CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "devashish/*"]
   pull_request:
     branches: [main]
 
