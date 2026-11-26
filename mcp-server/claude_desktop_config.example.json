@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "aftermath-live": {
+      "command": "node",
+      "args": [
+        "C:/Users/Harshit/Projects/Whackiest/mcp-server/src/server.js"
+      ]
+    }
+  }
+}

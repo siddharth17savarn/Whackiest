@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AFTERMATH LIVE — Dispute Report</title>
+</head>
+<body>
+  <div id="app">Loading dispute report…</div>
+  <script src="shared/report_generator.js"></script>
+  <script>
+    (async () => {
+      let items = [];
+      let nowMs = Date.now();
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/sync');
+        if (resp.ok) {
+          const data = await resp.json();
+          items = Array.isArray(data.items) ? data.items : [];
+          nowMs = Date.now() + (data.skew || 0);
+        }
+      } catch (_) {}
+
+      if (items.length === 0 && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const data = await chrome.storage.local.get(['items', 'skew']);
+        items = Array.isArray(data.items) ? data.items : [];
+        nowMs = Date.now() + (data.skew || 0);
+      }
+
+      document.open();
+      document.write(window.AftermathReport.generatePrintableReportHtml(items, { nowMs }));
+      document.close();
+    })();
+  </script>
+</body>
+</html>

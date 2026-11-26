@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import Settings, get_settings
 from .extractor import extract_promises
+from .routers.inbox import router as inbox_router
+from .routers.sync import router as sync_router
 from .schemas import ExportRequest, ExportResponse, ExtractRequest, ExtractResponse, HealthResponse
 from .services.exporter import build_export_response
 
@@ -32,6 +34,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+app.include_router(sync_router)
+app.include_router(inbox_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])

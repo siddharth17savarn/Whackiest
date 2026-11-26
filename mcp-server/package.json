@@ -1,0 +1,14 @@
+{
+  "name": "aftermath-live-mcp",
+  "version": "0.1.0",
+  "description": "AFTERMATH LIVE Node.js MCP stdio server for promise tracking, overdue checks, dispute summaries, and observation write-back.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  }
+}
