@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-11-26T10:00:00+05:30",
+  "skew": 0,
+  "items": [
+    {
+      "id": 1764131400000,
+      "company": "ShopKart",
+      "promise": "Your refund of ₹2,499 will be processed within 5 business days.",
+      "due": 1764000000000,
+      "confidence": 0.9,
+      "condition": "provided the return package is scanned by the courier",
+      "evidence": "Your refund of ₹2,499 will be processed within 5 business days, provided the return package is scanned by the courier.",
+      "chat": "http://localhost:8000/demo_shopkart_chat.html",
+      "created": 1763500000000,
+      "claimed": {
+        "text": "Good news: your refund has been processed on our side.",
+        "at": 1763900000000
+      },
+      "observed": null,
+      "verified": false,
+      "state": "CLAIMED"
+    },
+    {
+      "id": 1764135000000,
+      "company": "SwiftPay",
+      "promise": "Your reversal of ₹1,850 will be credited within 24 hours.",
+      "due": 1790000000000,
+      "confidence": 0.92,
+      "condition": null,
+      "evidence": "Your reversal of ₹1,850 will be credited within 24 hours.",
+      "chat": "http://localhost:8000/demo_shopkart_chat.html",
+      "created": 1764135000000,
+      "claimed": {
+        "text": "Good news: your reversal has been completed on our side.",
+        "at": 1764140000000
+      },
+      "observed": {
+        "ok": true,
+        "note": "Credited in Demo Savings •••• 4821.",
+        "at": 1764145000000
+      },
+      "verified": true,
+      "state": "VERIFIED"
+    }
+  ]
+}
