@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AFTERMATH LIVE — Printable Dispute Report</title>
+  <style>
+    .toolbar{position:sticky;top:0;z-index:10;background:#1e293b;color:#fff;padding:10px 20px;display:flex;gap:10px;align-items:center;font:13px system-ui}
+    .toolbar button,.toolbar select{border:0;border-radius:6px;padding:7px 12px;font:13px system-ui;cursor:pointer}
+    .toolbar button.primary{background:#1a73e8;color:#fff;font-weight:600}
+    .toolbar button.secondary{background:#475569;color:#fff}
+    .toolbar .spacer{flex:1}
+    @media print{.toolbar{display:none!important}}
+  </style>
+</head>
+<body style="margin:0;background:#f9fafb">
+  <div class="toolbar">
+    <strong>AFTERMATH LIVE Dispute Report</strong>
+    <select id="filter">
+      <option value="all">All commitments</option>
+      <option value="broken">Overdue &amp; Contradictions only</option>
+    </select>
+    <span class="spacer"></span>
+    <button class="secondary" id="dl-html">Download HTML</button>
+    <button class="primary" id="print-pdf">Print / Save as PDF</button>
+  </div>
+  <div id="report-frame"></div>
+  <script type="module" src="report.js"></script>
+</body>
+</html>

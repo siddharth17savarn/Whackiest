@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "AFTERMATH LIVE",
+  "version": "0.3.1",
+  "description": "Every promise leaves a trace. Detects company promises in support chats and tracks Promise vs Reality.",
+  "icons": { "128": "icon-v3.png" },
+  "permissions": ["storage", "alarms", "contextMenus", "notifications", "scripting"],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "optional_host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background-v3.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup-v3.html",
+    "default_title": "AFTERMATH LIVE",
+    "default_icon": "icon-v3.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["shared/matching.js", "adapters.js", "content-v3.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

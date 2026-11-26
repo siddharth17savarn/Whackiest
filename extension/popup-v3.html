@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="popup-v3.css"></head><body>
+<header>
+  <div class="brand"><div class="logo">A</div><div><b>AFTERMATH LIVE</b><small>Every promise leaves a trace.</small></div></div>
+  <div class="stats" id="stats"></div>
+</header>
+<nav id="tabs"></nav>
+<main>
+  <div class="search-row">
+    <input id="q" type="search" placeholder="Search company or promise…" autocomplete="off">
+    <select id="state-filter">
+      <option value="all">All states</option>
+      <option value="open">Open</option>
+      <option value="risk">At risk</option>
+      <option value="verified">Verified</option>
+    </select>
+  </div>
+  <div id="list"></div>
+  <h3>Company reliability</h3>
+  <section id="scores"></section>
+  <details class="box" id="sites-box">
+    <summary>Manage allowed sites (Privacy)</summary>
+    <div id="sites-list" style="font-size:12px;margin-bottom:6px;color:#5f6368">No sites enabled yet.</div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <input id="site-add-input" placeholder="hostname, e.g. support.acme.com" style="flex:1">
+      <button class="b" id="site-add-btn">Enable</button>
+    </div>
+    <button class="b ghost" id="site-localhost" style="margin-top:6px">Enable localhost (Demo)</button>
+    <div style="font-size:11px;color:#5f6368;margin-top:6px">Only enabled hostnames are monitored. Empty list = deny all.</div>
+  </details>
+  <details class="box">
+    <summary>Add a promise manually</summary>
+    <input id="m-co" placeholder="Company (e.g. Airtel)">
+    <input id="m-pr" placeholder="What did they promise?">
+    <input id="m-dl" type="date">
+    <button class="b" id="m-add">Add to ledger</button>
+  </details>
+  <details class="box">
+    <summary>Settings</summary>
+    <input id="key" type="password" placeholder="Gemini API key (optional)">
+    <button class="b" id="save">Save key</button>
+    <label class="cond"><input type="checkbox" id="notif"> Deadline notifications</label>
+    <button class="b ghost" id="allsites">Enable detection on all sites</button>
+    <div style="font-size:11px;color:#5f6368;margin-top:6px">Tip: select text on any page, right-click, "Track as promise".</div>
+  </details>
+  <div class="foot">
+    <button class="b ghost" id="exp-html">Dispute report (PDF)</button>
+    <button class="b ghost" id="exp-md">Export MD</button>
+    <button class="b ghost" id="exp-json">Export JSON</button>
+    <button class="b ghost" id="warp">Demo: +6 days</button>
+    <button class="b ghost" id="clear">Clear</button>
+  </div>
+</main>
+<style>
+.search-row{display:flex;gap:6px;margin:8px 0}
+.search-row input{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:13px system-ui}
+.search-row select{border:1px solid #dadce0;border-radius:8px;padding:6px 4px;font:13px system-ui}
+#sites-list .site-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #f1f3f4}
+#sites-list .site-row button{border:0;background:none;color:#d93025;cursor:pointer;font-size:11px}
+</style>
+<script type="module" src="popup-v3.js"></script>
+</body></html>
