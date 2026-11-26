@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Bank &amp; Order Status — AFTERMATH LIVE Demo</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef1f6; --c: #fff; --t: #111827; --m: #6b7280;
+      --b: #d1d5db; --u: #2563eb; --bad: #dc2626; --ok: #16a34a; --warn: #d97706;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020; --c: #151b2e; --t: #e5e7eb; --m: #9ca3af; --b: #27304a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--t);
+      font: 14px/1.5 system-ui, -apple-system, sans-serif;
+      padding: 24px 16px;
+    }
+    main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    .topbar {
+      display: flex; flex-wrap: wrap; justify-content: space-between;
+      align-items: center; gap: 10px;
+    }
+    h1 { margin: 0; font-size: 22px; }
+    h1 span { color: var(--warn); }
+    .sub { color: var(--m); font-size: 13px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button, select, a.btn {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--b);
+      background: var(--c); color: var(--t); font: inherit; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    button.danger { background: var(--bad); border-color: var(--bad); color: #fff; font-weight: 600; }
+    button.primary { background: var(--u); border-color: var(--u); color: #fff; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--c); border: 1px solid var(--b); border-radius: 14px;
+      padding: 16px; box-shadow: 0 8px 28px #0001;
+    }
+    .card.alert { border-color: var(--bad); }
+    .card h2 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .pill {
+      display: inline-block; padding: 2px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+    .pill.bad { background: var(--bad); }
+    .pill.ok { background: var(--ok); }
+    .pill.warn { background: var(--warn); }
+    .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 10px; font-size: 13px; }
+    .kv .k { color: var(--m); }
+    .kv .v { font-weight: 600; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+    .box { padding: 12px; border-radius: 10px; border: 1px dashed var(--b); }
+    .box.claimed { border-color: var(--warn); background: #f59e0b14; }
+    .box.observed { border-color: var(--bad); background: #dc262614; }
+    .box.observed.ok { border-color: var(--ok); background: #16a34a14; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--b); }
+    th { color: var(--m); font-weight: 600; font-size: 12px; }
+    .notice {
+      font-size: 12px; color: var(--m); padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--b); background: var(--c);
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <div>
+      <h1>My Bank &amp; Order Status <span>(Demo)</span></h1>
+      <div class="sub">Fictional bank &amp; order portal for the AFTERMATH LIVE <b>OBSERVED</b> verification step.</div>
+    </div>
+    <div class="actions">
+      <select id="accountSel" aria-label="Select demo order">
+        <option value="shopkart">Order #SK-9042 · ShopKart (Refund Missing)</option>
+        <option value="swiftpay">Txn #SP-4410 · SwiftPay (Settled)</option>
+      </select>
+      <button id="toggleStatusBtn" class="primary">Toggle Observed Status</button>
+      <button id="judgeResetBtn" class="danger">↺ Judge Reset</button>
+      <a class="btn" href="demo_shopkart_chat.html">← Support Chat</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>
+        <span>Order &amp; Refund Summary</span>
+        <span class="pill warn" id="orderBadge">REFUND PENDING</span>
+      </h2>
+      <div class="kv" id="orderDetails"></div>
+    </section>
+
+    <section class="card" id="bankCard">
+      <h2>
+        <span>Observed Bank Ledger</span>
+        <span class="pill bad" id="bankBadge">NOT CREDITED</span>
+      </h2>
+      <div class="kv" id="bankDetails"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Claimed vs Observed (Dispute Evidence)</h2>
+    <div class="compare">
+      <div class="box claimed">
+        <strong>COMPANY CLAIMED</strong>
+        <p id="claimedText" style="margin:6px 0 0;"></p>
+      </div>
+      <div class="box observed" id="observedBox">
+        <strong>USER OBSERVED</strong>
+        <p id="observedText" style="margin:6px 0 0;"></p>
+      </div>
+    </div>
+    <p class="sub" style="margin:12px 0 0;">
+      <b>How to use in demo:</b> Show this page showing ₹0.00 received → open the Promise Ledger extension → click <b>✗ It didn’t</b> → state becomes <b>CONTRADICTION</b> → export structured dispute evidence via <code>/export</code>.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Recent Bank Statement Entries (Fictional)</h2>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Reference</th><th>Description</th><th>Amount</th><th>Status</th></tr>
+      </thead>
+      <tbody id="txBody"></tbody>
+    </table>
+  </section>
+
+  <div class="notice" id="resetNotice">
+    Fictional demo data only. No real bank or payment API is connected. State is stored locally in browser <code>localStorage</code> and resettable via <b>↺ Judge Reset</b>.
+  </div>
+</main>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'aftermath_demo_bank_state_v1';
+
+  const DEFAULT_RECORDS = {
+    shopkart: {
+      orderId: '#SK-9042',
+      company: 'ShopKart',
+      item: 'Studio Wireless Headphones',
+      promisedAmount: '₹2,499.00',
+      initiatedDate: '26 Nov 2026',
+      expectedDeadline: '03 Dec 2026, 6:00 PM (5 business days)',
+      claimedText: '"Good news: your refund has been processed on our side." (Logged 30 Nov 2026)',
+      credited: false,
+      bankAccount: 'Demo Savings •••• 4821',
+      transactions: [
+        { date: '03 Dec 2026', ref: 'CHK-SK9042', desc: 'ShopKart Refund Check', amount: '₹0.00', status: 'NOT RECEIVED' },
+        { date: '26 Nov 2026', ref: 'RET-SK9042', desc: 'Courier Return Scan Confirmed', amount: '—', status: 'RETURNED' },
+        { date: '22 Nov 2026', ref: 'UPI-904211', desc: 'Payment to ShopKart Marketplace', amount: '-₹2,499.00', status: 'DEBITED' }
+      ]
+    },
+    swiftpay: {
+      orderId: '#SP-4410',
+      company: 'SwiftPay',
+      item: 'Wallet Reversal (Duplicate Charge)',
+      promisedAmount: '₹1,850.00',
+      initiatedDate: '26 Nov 2026',
+      expectedDeadline: '27 Nov 2026, 10:00 AM (24 hours)',
+      claimedText: '"Good news: your reversal has been completed on our side." (Logged 26 Nov 2026)',
+      credited: true,
+      bankAccount: 'Demo Savings •••• 4821',
+      transactions: [
+        { date: '27 Nov 2026', ref: 'NEFT-SP4410', desc: 'SwiftPay Reversal Credit', amount: '+₹1,850.00', status: 'CREDITED' },
+        { date: '26 Nov 2026', ref: 'UPI-441002', desc: 'SwiftPay Merchant Debit', amount: '-₹1,850.00', status: 'DEBITED' }
+      ]
+    }
+  };
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (saved && saved.records && saved.selected) return saved;
+    } catch (_) {}
+    return {
+      selected: 'shopkart',
+      records: JSON.parse(JSON.stringify(DEFAULT_RECORDS))
+    };
+  }
+
+  let state = loadState();
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  const accountSel = document.getElementById('accountSel');
+  const toggleStatusBtn = document.getElementById('toggleStatusBtn');
+  const judgeResetBtn = document.getElementById('judgeResetBtn');
+  const orderBadge = document.getElementById('orderBadge');
+  const bankBadge = document.getElementById('bankBadge');
+  const bankCard = document.getElementById('bankCard');
+  const orderDetails = document.getElementById('orderDetails');
+  const bankDetails = document.getElementById('bankDetails');
+  const claimedText = document.getElementById('claimedText');
+  const observedText = document.getElementById('observedText');
+  const observedBox = document.getElementById('observedBox');
+  const txBody = document.getElementById('txBody');
+  const resetNotice = document.getElementById('resetNotice');
+
+  function render() {
+    accountSel.value = state.selected;
+    const rec = state.records[state.selected];
+
+    orderDetails.innerHTML = `
+      <div class="k">Order / Ref</div><div class="v">${rec.orderId} (${rec.company})</div>
+      <div class="k">Item</div><div class="v">${rec.item}</div>
+      <div class="k">Promised Refund</div><div class="v">${rec.promisedAmount}</div>
+      <div class="k">Initiated Date</div><div class="v">${rec.initiatedDate}</div>
+      <div class="k">Expected Deadline</div><div class="v">${rec.expectedDeadline}</div>
+    `;
+
+    orderBadge.textContent = rec.credited ? 'REFUND SETTLED' : 'REFUND OVERDUE / MISSING';
+    orderBadge.className = 'pill ' + (rec.credited ? 'ok' : 'bad');
+
+    bankBadge.textContent = rec.credited ? 'CREDITED' : 'NOT CREDITED';
+    bankBadge.className = 'pill ' + (rec.credited ? 'ok' : 'bad');
+    bankCard.className = 'card' + (rec.credited ? '' : ' alert');
+
+    bankDetails.innerHTML = `
+      <div class="k">Bank Account</div><div class="v">${rec.bankAccount}</div>
+      <div class="k">Observed Credit</div><div class="v">${rec.credited ? rec.promisedAmount : '₹0.00'}</div>
+      <div class="k">Settlement Status</div><div class="v">${rec.credited ? 'Cleared & Visible' : 'No matching credit found'}</div>
+      <div class="k">Dispute Impact</div><div class="v">${rec.credited ? 'Supports VERIFIED' : 'Supports CONTRADICTION'}</div>
+    `;
+
+    claimedText.textContent = rec.claimedText;
+    observedText.textContent = rec.credited
+      ? `Observed ${rec.promisedAmount} credited in ${rec.bankAccount}. Matches company claim.`
+      : `Observed ₹0.00 received for ${rec.orderId} after ${rec.expectedDeadline}. Contradicts company claim.`;
+    observedBox.className = 'box observed' + (rec.credited ? ' ok' : '');
+
+    txBody.innerHTML = rec.transactions.map((t) => `
+      <tr>
+        <td>${t.date}</td>
+        <td><code>${t.ref}</code></td>
+        <td>${t.desc}</td>
+        <td><b>${t.amount}</b></td>
+        <td>${t.status}</td>
+      </tr>
+    `).join('');
+  }
+
+  accountSel.onchange = () => {
+    state.selected = accountSel.value;
+    saveState();
+    render();
+  };
+
+  toggleStatusBtn.onclick = () => {
+    const rec = state.records[state.selected];
+    rec.credited = !rec.credited;
+    saveState();
+    render();
+  };
+
+  judgeResetBtn.onclick = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    state = {
+      selected: 'shopkart',
+      records: JSON.parse(JSON.stringify(DEFAULT_RECORDS))
+    };
+    saveState();
+    render();
+    resetNotice.textContent = 'Demo reset complete: restored ShopKart #SK-9042 (NOT CREDITED) and cleared temporary demo state.';
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
