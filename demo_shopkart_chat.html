@@ -1,26 +1,343 @@
-<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>ShopKart Support (Demo)</title>
-<style>:root{color-scheme:light dark;--bg:#eef1f6;--c:#fff;--t:#111827;--a:#e8eefc;--u:#2563eb}
-@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--c:#151b2e;--t:#e5e7eb;--a:#222c48}}
-body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui;display:grid;place-items:center;min-height:100vh}
-.w{width:min(440px,94vw);background:var(--c);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px #0003}
-header{background:var(--u);color:#fff;padding:14px 16px;font-weight:700}header small{display:block;font-weight:400;opacity:.85}
-#log{height:380px;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
-.msg{max-width:80%;padding:9px 12px;border-radius:12px;line-height:1.4}.agent{background:var(--a);align-self:flex-start}.user{background:var(--u);color:#fff;align-self:flex-end}
-form{display:flex;gap:8px;padding:10px;border-top:1px solid #8884}input{flex:1;padding:9px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit}
-button{background:var(--u);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
-.hint{font-size:12px;opacity:.7;padding:0 14px 10px}</style>
-<div class=w data-company="ShopKart"><header>ShopKart Support<small>Demo support chat · scripted agent</small></header>
-<div id=log></div><div class=hint>Type anything and press Send – the agent replies from a script (4 steps).</div>
-<form id=f><input id=i placeholder="My order arrived damaged…" autocomplete=off><button>Send</button></form></div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AFTERMATH LIVE — Support Chat Demo (ShopKart &amp; SwiftPay)</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef1f6; --c: #fff; --t: #111827; --m: #6b7280;
+      --a: #e8eefc; --u: #2563eb; --b: #d1d5db; --warn: #d97706; --ok: #16a34a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020; --c: #151b2e; --t: #e5e7eb; --m: #9ca3af;
+        --a: #222c48; --b: #27304a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--t);
+      font: 14px/1.45 system-ui, -apple-system, sans-serif;
+      display: grid; place-items: center; min-height: 100vh; padding: 16px;
+    }
+    .shell {
+      width: min(820px, 96vw); display: grid;
+      grid-template-columns: 270px 1fr; gap: 14px;
+    }
+    @media (max-width: 720px) { .shell { grid-template-columns: 1fr; } }
+    .panel, .chat {
+      background: var(--c); border: 1px solid var(--b);
+      border-radius: 16px; overflow: hidden; box-shadow: 0 10px 36px #0002;
+    }
+    .panel { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    .panel h2 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--m); }
+    label { display: block; font-size: 12px; color: var(--m); margin-bottom: 4px; font-weight: 600; }
+    select, button {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid var(--b); background: var(--c); color: var(--t);
+      font: inherit; cursor: pointer;
+    }
+    button.primary { background: var(--u); color: #fff; border-color: var(--u); font-weight: 600; }
+    button.secondary { background: transparent; }
+    .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+    .toggle input { width: auto; cursor: pointer; }
+    .rel-card {
+      padding: 10px; border-radius: 10px; border: 1px solid var(--b); font-size: 12px;
+    }
+    .rel-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      color: #fff; font-weight: 700; font-size: 11px; margin-bottom: 4px;
+    }
+    .rel-low { background: var(--warn); }
+    .rel-high { background: var(--ok); }
+    .chat { display: flex; flex-direction: column; height: 540px; }
+    header {
+      background: var(--u); color: #fff; padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    header.swiftpay { background: #0f766e; }
+    header small { display: block; font-weight: 400; opacity: .88; font-size: 12px; }
+    #log {
+      flex: 1; overflow: auto; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .msg { max-width: 82%; padding: 9px 12px; border-radius: 12px; }
+    .agent { background: var(--a); align-self: flex-start; }
+    .user { background: var(--u); color: #fff; align-self: flex-end; }
+    .streaming-bubble {
+      border: 1px dashed var(--warn); opacity: .92;
+    }
+    .typing {
+      font-size: 12px; color: var(--m); padding: 0 14px 6px; min-height: 20px;
+      font-style: italic;
+    }
+    form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--b); }
+    form input {
+      flex: 1; padding: 9px; border-radius: 8px;
+      border: 1px solid var(--b); background: transparent; color: inherit;
+    }
+    form button { width: auto; padding: 9px 16px; }
+    .status-bar { font-size: 11px; color: var(--m); padding: 6px 14px 10px; border-top: 1px solid var(--b); }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="panel">
+    <h2>Demo Controls</h2>
+    <div>
+      <label for="companySel">Company</label>
+      <select id="companySel">
+        <option value="ShopKart">ShopKart (E-Commerce)</option>
+        <option value="SwiftPay">SwiftPay (Fintech Wallet)</option>
+      </select>
+    </div>
+
+    <div class="rel-card" id="relCard"></div>
+
+    <div>
+      <label for="scenarioSel">Scenario (6 Judge Cases)</label>
+      <select id="scenarioSel">
+        <option value="refund">1. Refund promise (5 biz days)</option>
+        <option value="delivery">2. Delivery date (3-5 biz days)</option>
+        <option value="shortly">3. Vague "shortly" promise</option>
+        <option value="conditional">4. Conditional promise</option>
+        <option value="moved_deadline">5. Company changes its deadline</option>
+        <option value="claim_vs_reality">6. Claim versus reality</option>
+      </select>
+    </div>
+
+    <label class="toggle">
+      <input type="checkbox" id="streamToggle" checked>
+      Streaming mode (word-by-word)
+    </label>
+
+    <button class="primary" id="nextStepBtn">▶ Send Next Agent Step</button>
+    <button class="secondary" id="halfWriteBtn">⏳ Test Half-Written Stream</button>
+    <button class="secondary" id="resetChatBtn">↺ Reset Conversation</button>
+  </aside>
+
+  <section class="chat" id="chatRoot" data-company="ShopKart">
+    <header id="chatHeader">
+      <div>
+        <strong id="companyTitle">ShopKart Support</strong>
+        <small id="companySub">Demo support chat · 6 scenarios</small>
+      </div>
+      <small id="stepCounter">Step 0 / 0</small>
+    </header>
+    <div id="log"></div>
+    <div class="typing" id="typing"></div>
+    <form id="f">
+      <input id="i" placeholder="Type a message or click 'Send Next Agent Step'…" autocomplete="off">
+      <button class="primary" type="submit">Send</button>
+    </form>
+    <div class="status-bar" id="statusBar">
+      Streaming protection: bubbles carry <code>data-streaming="true"</code> and only receive <code>data-role="agent"</code> once complete.
+    </div>
+  </section>
+</div>
+
 <script>
-const script=["Hi, I'm Priya from ShopKart Support. I'm sorry about the damaged item – let me look into it.",
-"Your refund will be processed within 5 business days, provided the return is scanned at the courier.",
-"We have escalated your complaint, and you will receive an update by tomorrow.",
-"Good news: your refund has been processed on our side. Anything else I can help with?"];
-let n=0;const log=document.getElementById('log');
-function add(t,r){const d=document.createElement('div');d.className='msg '+r;if(r==='agent')d.dataset.role='agent';d.textContent=t;log.appendChild(d);log.scrollTop=1e9;}
-add(script[n++],'agent');
-f.onsubmit=e=>{e.preventDefault();add(i.value||'(no text)','user');i.value='';
- setTimeout(()=>add(script[n%script.length],'agent'),900);n++;};
-</script></html>
+(() => {
+  const COMPANIES = {
+    ShopKart: {
+      agent: 'Priya',
+      headerClass: '',
+      reliabilityPct: 64,
+      badgeClass: 'rel-low',
+      note: '64% on-time · Frequent deadline shifts & unverified refund claims.',
+      scenarios: {
+        refund: [
+          "Hi, I'm Priya from ShopKart Support. I'm sorry about the damaged item — let me check your order #SK-9042.",
+          "Your refund of ₹2,499 will be processed within 5 business days."
+        ],
+        delivery: [
+          "Thanks for contacting ShopKart regarding order #SK-9042.",
+          "Your replacement shipment will arrive within 3-5 business days."
+        ],
+        shortly: [
+          "We are currently experiencing high support volume.",
+          "Our escalations team will review your ticket and get back to you shortly."
+        ],
+        conditional: [
+          "I have approved a full refund for your headphones.",
+          "Your refund will be issued within 3 business days, provided the return package is scanned by the courier."
+        ],
+        moved_deadline: [
+          "We have escalated your complaint, and you will receive an update by tomorrow.",
+          "Apologies for the delay — due to a warehouse audit, your update will now arrive within 4 business days instead."
+        ],
+        claim_vs_reality: [
+          "Your refund of ₹2,499 will be processed within 5 business days.",
+          "We have also escalated your delivery issue and will update you by tomorrow.",
+          "Good news: your refund has been processed on our side. Anything else I can help with?"
+        ]
+      }
+    },
+    SwiftPay: {
+      agent: 'Arjun',
+      headerClass: 'swiftpay',
+      reliabilityPct: 96,
+      badgeClass: 'rel-high',
+      note: '96% on-time · Concrete SLA windows and verified settlements.',
+      scenarios: {
+        refund: [
+          "Hello, I'm Arjun from SwiftPay Priority Care. Checking transaction #SP-4410.",
+          "Your reversal of ₹1,850 will be credited within 24 hours."
+        ],
+        delivery: [
+          "Your physical SwiftPay card replacement is ready.",
+          "The card will be delivered within 2 to 4 working days."
+        ],
+        shortly: [
+          "Our automated risk team is reviewing the alert.",
+          "A specialist will follow up shortly."
+        ],
+        conditional: [
+          "We can waive the late fee on your account.",
+          "The fee waiver will be applied within 2 business days, provided your KYC document is uploaded."
+        ],
+        moved_deadline: [
+          "Your chargeback dispute will be reviewed by tomorrow.",
+          "Update: the merchant requested extra time, so final resolution will now complete by Friday."
+        ],
+        claim_vs_reality: [
+          "Your ₹1,850 reversal will be credited within 24 hours.",
+          "Good news: your reversal has been completed on our side."
+        ]
+      }
+    }
+  };
+
+  const chatRoot = document.getElementById('chatRoot');
+  const chatHeader = document.getElementById('chatHeader');
+  const companySel = document.getElementById('companySel');
+  const scenarioSel = document.getElementById('scenarioSel');
+  const streamToggle = document.getElementById('streamToggle');
+  const nextStepBtn = document.getElementById('nextStepBtn');
+  const halfWriteBtn = document.getElementById('halfWriteBtn');
+  const resetChatBtn = document.getElementById('resetChatBtn');
+  const relCard = document.getElementById('relCard');
+  const companyTitle = document.getElementById('companyTitle');
+  const stepCounter = document.getElementById('stepCounter');
+  const log = document.getElementById('log');
+  const typing = document.getElementById('typing');
+  const form = document.getElementById('f');
+  const input = document.getElementById('i');
+
+  let stepIdx = 0;
+  let activeTimer = null;
+
+  function currentCompany() { return COMPANIES[companySel.value]; }
+  function currentLines() { return currentCompany().scenarios[scenarioSel.value]; }
+
+  function updateHeaderAndReliability() {
+    const coName = companySel.value;
+    const co = currentCompany();
+    chatRoot.dataset.company = coName;
+    companyTitle.textContent = `${coName} Support`;
+    chatHeader.className = co.headerClass;
+    relCard.innerHTML =
+      `<span class="rel-badge ${co.badgeClass}">${coName}: ${co.reliabilityPct}% (demo/fictional)</span>` +
+      `<div>${co.note}</div>`;
+    const lines = currentLines();
+    stepCounter.textContent = `Step ${Math.min(stepIdx, lines.length)} / ${lines.length}`;
+  }
+
+  function appendUser(text) {
+    const d = document.createElement('div');
+    d.className = 'msg user';
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function deliverAgentMessage(text, { halfWritten = false } = {}) {
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
+    const co = currentCompany();
+    typing.textContent = `${co.agent} is typing…`;
+
+    setTimeout(() => {
+      typing.textContent = '';
+      const d = document.createElement('div');
+      d.className = 'msg agent';
+
+      if (!streamToggle.checked && !halfWritten) {
+        d.dataset.role = 'agent';
+        d.textContent = text;
+        log.appendChild(d);
+        log.scrollTop = log.scrollHeight;
+        return;
+      }
+
+      // Streaming mode: mark data-streaming="true" and withhold data-role="agent"
+      // until the message is 100% complete so MutationObservers ignore half-written text.
+      d.dataset.streaming = 'true';
+      d.classList.add('streaming-bubble');
+      log.appendChild(d);
+
+      const words = text.split(' ');
+      const stopAt = halfWritten ? Math.max(2, Math.floor(words.length / 2)) : words.length;
+      let idx = 0;
+
+      activeTimer = setInterval(() => {
+        idx++;
+        d.textContent = words.slice(0, idx).join(' ') + (idx < words.length ? ' ▌' : '');
+        log.scrollTop = log.scrollHeight;
+
+        if (idx >= stopAt) {
+          clearInterval(activeTimer);
+          activeTimer = null;
+          if (!halfWritten) {
+            delete d.dataset.streaming;
+            d.classList.remove('streaming-bubble');
+            d.dataset.role = 'agent';
+            d.textContent = text;
+          }
+        }
+      }, 65);
+    }, 450);
+  }
+
+  function sendNextStep() {
+    const lines = currentLines();
+    const msg = lines[stepIdx % lines.length];
+    stepIdx++;
+    updateHeaderAndReliability();
+    deliverAgentMessage(msg);
+  }
+
+  function resetChat() {
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
+    typing.textContent = '';
+    log.innerHTML = '';
+    stepIdx = 0;
+    updateHeaderAndReliability();
+    sendNextStep();
+  }
+
+  companySel.onchange = resetChat;
+  scenarioSel.onchange = resetChat;
+  nextStepBtn.onclick = sendNextStep;
+  halfWriteBtn.onclick = () => {
+    deliverAgentMessage(
+      "Your refund of ₹2,499 will be processed within 5 business days.",
+      { halfWritten: true }
+    );
+  };
+  resetChatBtn.onclick = resetChat;
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const val = input.value.trim() || '(no text)';
+    appendUser(val);
+    input.value = '';
+    sendNextStep();
+  };
+
+  resetChat();
+})();
+</script>
+</body>
+</html>
